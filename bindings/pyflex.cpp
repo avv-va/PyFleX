@@ -2443,6 +2443,7 @@ void pyflex_init() {
     g_scenes.push_back(new yz_FluidShake("Fluid Shake"));
     g_scenes.push_back(new yz_BoxBathExt("Box Bath Extension", true));
     g_scenes.push_back(new yz_FluidIceShake("Fluid Ice Shake"));
+    g_scenes.push_back(new yz_RopePush("Rope Push"));
 
     /*
     // opening scene
