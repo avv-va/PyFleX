@@ -18,6 +18,11 @@ public:
 		float pusherHalfHeight = ptr[11];
 		Vec3 pusherPosition = Vec3(ptr[12], ptr[13], ptr[14]);
 		float friction = ptr[15];
+		float dt = ptr[16];
+		int numSubsteps = (int) ptr[17];
+		int numIterations = (int) ptr[18];
+		float damping = ptr[19];
+		float dissipation = ptr[20];
 
 		Rope rope;
 		CreateRope(rope, ropeStart, ropeDir, ropeStiffness, ropeSegments, ropeLength, NvFlexMakePhase(0, eNvFlexPhaseSelfCollide));
@@ -26,14 +31,15 @@ public:
 		AddCapsule(pusherRadius, pusherHalfHeight, pusherPosition, QuatFromAxisAngle(Vec3(0.0f, 0.0f, 1.0f), kPi * 0.5f));
 
 		g_params.radius = radius;
-		g_params.numIterations = 8;
+		g_params.numIterations = numIterations;
 		g_params.dynamicFriction = friction;
 		g_params.staticFriction = friction;
 		g_params.particleFriction = friction;
-		g_params.damping = 0.5f;
-		g_params.dissipation = 0.001f;
+		g_params.damping = damping;
+		g_params.dissipation = dissipation;
 
-		g_numSubsteps = 4;
+		g_dt = dt;
+		g_numSubsteps = numSubsteps;
 
 		g_drawPoints = true;
 		g_drawMesh = false;

@@ -407,6 +407,7 @@ bool g_capture = false;
 bool g_showHelp = true;
 bool g_tweakPanel = false;
 bool g_fullscreen = false;
+bool g_headless = false;
 bool g_wireframe = false;
 bool g_debug = false;
 
@@ -1943,15 +1944,19 @@ void UpdateFrame(py::array_t<float> update_params) {
         }
     }
 
-    StartFrame(Vec4(g_clearColor, 1.0f));
+    int newScene = -1;
 
-    // main scene render
-    RenderScene();
-    RenderDebug();
+    if (!g_headless) {
+        StartFrame(Vec4(g_clearColor, 1.0f));
 
-    int newScene = DoUI();
+        // main scene render
+        RenderScene();
+        RenderDebug();
 
-    EndFrame();
+        newScene = DoUI();
+
+        EndFrame();
+    }
 
     // If user has disabled async compute, ensure that no compute can overlap
     // graphics by placing a sync between them
@@ -2087,7 +2092,8 @@ void UpdateFrame(py::array_t<float> update_params) {
 
     // flush out the last frame before freeing up resources in the event of a scene change
     // this is necessary for d3d12
-    PresentFrame(g_vsync);
+    if (!g_headless)
+        PresentFrame(g_vsync);
 
     // if gui or benchmark requested a scene change process it now
     if (newScene != -1) {
@@ -2405,6 +2411,9 @@ void SDLInit(const char* title) {
 		flags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL;
 	}
 
+	if (g_headless)
+		flags |= SDL_WINDOW_HIDDEN;
+
 	g_window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
 		g_screenWidth, g_screenHeight, flags);
 
@@ -2428,7 +2437,8 @@ char* make_path(char* full_path, std::string path) {
     return full_path;
 }
 
-void pyflex_init() {
+void pyflex_init(bool headless = false) {
+    g_headless = headless;
 
     // Customized scenes
     g_scenes.push_back(new yz_BunnyBath("Bunny Bath", true));
@@ -3448,7 +3458,7 @@ void pyflex_render(int capture, char *path) {
 PYBIND11_MODULE(pyflex, m) {
     m.def("main", &main);
 
-    m.def("init", &pyflex_init);
+    m.def("init", &pyflex_init, py::arg("headless") = false);
     m.def("set_scene", &pyflex_set_scene);
     m.def("clean", &pyflex_clean);
     m.def("step", &pyflex_step,
