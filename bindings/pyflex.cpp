@@ -2454,6 +2454,9 @@ void pyflex_init(bool headless = false) {
     g_scenes.push_back(new yz_BoxBathExt("Box Bath Extension", true));
     g_scenes.push_back(new yz_FluidIceShake("Fluid Ice Shake"));
     g_scenes.push_back(new yz_RopePush("Rope Push"));
+    g_scenes.push_back(new yz_SoftRope("Soft Rope"));
+    g_scenes.push_back(new yz_Granular("Granular"));
+    g_scenes.push_back(new yz_Cloth("Cloth"));
 
     /*
     // opening scene
@@ -2903,6 +2906,22 @@ void pyflex_add_box(py::array_t<float> halfEdge_, py::array_t<float> center_, py
 
     AddBox(halfEdge, center, quat);
 
+    pyflex_UnmapShapeBuffers(g_buffers);
+}
+
+void pyflex_add_mesh(const char *path, float scaling, py::array_t<float> translation_, py::array_t<float> quat_) {
+    Mesh* mesh = ImportMesh(path);
+    mesh->Transform(ScaleMatrix(Vec3(scaling)));
+    NvFlexTriangleMeshId meshId = CreateTriangleMesh(mesh);
+
+    auto ptr_translation = (float *) translation_.request().ptr;
+    Vec3 translation = Vec3(ptr_translation[0], ptr_translation[1], ptr_translation[2]);
+
+    auto ptr_quat = (float *) quat_.request().ptr;
+    Quat quat = Quat(ptr_quat[0], ptr_quat[1], ptr_quat[2], ptr_quat[3]);
+
+    pyflex_MapShapeBuffers(g_buffers);
+    AddTriangleMesh(meshId, translation, quat, 1.0f);
     pyflex_UnmapShapeBuffers(g_buffers);
 }
 
@@ -3470,6 +3489,7 @@ PYBIND11_MODULE(pyflex, m) {
           py::arg("path") = nullptr);
 
     m.def("add_box", &pyflex_add_box, "Add box to the scene");
+    m.def("add_mesh", &pyflex_add_mesh, "Add a scaled triangle mesh shape loaded from an obj file");
 
     m.def("get_n_particles", &pyflex_get_n_particles, "Get the number of particles");
     m.def("get_n_shapes", &pyflex_get_n_shapes, "Get the number of shapes");

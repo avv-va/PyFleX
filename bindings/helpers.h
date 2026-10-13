@@ -700,6 +700,59 @@ void CreateRandomBody(int numPlanes, Vec3 position, float minDist, float maxDist
 	g_buffers->triangleNormals.resize(g_buffers->triangleNormals.size() + builder.mIndices.size()/3, Vec3(0.0f));
 }
 
+Mesh* CreateRandomConvexMesh(int numPlanes, float minDist, float maxDist, bool regularShape)
+{
+	const int maxPlanes = 12;
+
+	const Vec3 directions[maxPlanes] = {
+		Vec3(1.0f, 0.0f, 0.0f),
+		Vec3(0.0f, 1.0f, 0.0f),
+		Vec3(0.0f, 0.0f, 1.0f),
+		Vec3(-1.0f, 0.0f, 0.0f),
+		Vec3(0.0f, -1.0f, 0.0f),
+		Vec3(0.0f, 0.0f, -1.0f),
+		Vec3(1.0f, 1.0f, 0.0f),
+		Vec3(-1.0f, -1.0f, 0.0f),
+		Vec3(1.0f, 0.0f, 1.0f),
+		Vec3(-1.0f, 0.0f, -1.0f),
+		Vec3(0.0f, 1.0f, 1.0f),
+		Vec3(0.0f, -1.0f, -1.0f),
+	};
+
+	if (regularShape)
+		numPlanes = 6;
+
+	numPlanes = Clamp(6, numPlanes, maxPlanes);
+
+	vector<Vec4> planes;
+	for (int i=0; i < numPlanes; ++i)
+		planes.push_back(Vec4(Normalize(directions[i]), -Randf(minDist, maxDist)));
+
+	ConvexMeshBuilder builder(&planes[0]);
+	builder(numPlanes);
+
+	Mesh* mesh = new Mesh();
+	for (size_t j=0; j < builder.mIndices.size(); j += 3)
+	{
+		const Vec3 corners[3] = {
+			builder.mVertices[builder.mIndices[j + 0]],
+			builder.mVertices[builder.mIndices[j + 1]],
+			builder.mVertices[builder.mIndices[j + 2]],
+		};
+		const Vec3 n = Normalize(Cross(corners[1] - corners[0], corners[2] - corners[0]));
+
+		const int startIndex = int(mesh->m_positions.size());
+		for (int k=0; k < 3; ++k)
+		{
+			mesh->m_positions.push_back(Point3(corners[k]));
+			mesh->m_normals.push_back(n);
+			mesh->m_colours.push_back(Colour(1.0f, 1.0f, 1.0f));
+			mesh->m_indices.push_back(startIndex + k);
+		}
+	}
+	return mesh;
+}
+
 NvFlexTriangleMeshId CreateTriangleMesh(Mesh* m)
 {
 	if (!m)
