@@ -69,7 +69,6 @@ public:
 #include "scenes/yz_softbody.h"
 #include "scenes/yz_fluidshake.h"
 #include "scenes/yz_fluidiceshake.h"
-#include "scenes/yz_ropepush.h"
 #include "scenes/yz_xarm_tabletop.h"
 #include "scenes/yz_softrope.h"
 #include "scenes/yz_granular.h"
