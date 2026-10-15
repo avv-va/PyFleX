@@ -35,7 +35,7 @@ public:
 		seed1 = seed;
 		seed2 = seed1 ^ 0x13ab45fe;
 
-		int group = 0;
+		int group = 1;  // group 0 is left to the rope or cloth sharing the scene
 		float pitch = granularScale + granularDistance;
 		for (int x = 0; x < numX; x++)
 		{

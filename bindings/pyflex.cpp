@@ -2456,6 +2456,9 @@ void pyflex_init(bool headless = false) {
     g_scenes.push_back(new yz_SoftRope("Soft Rope"));
     g_scenes.push_back(new yz_Granular("Granular"));
     g_scenes.push_back(new yz_Cloth("Cloth"));
+    g_scenes.push_back(new yz_ClothGranular("Cloth Granular"));
+    g_scenes.push_back(new yz_RopeBox("Rope Box"));
+    g_scenes.push_back(new yz_RopeGranular("Rope Granular"));
 
     /*
     // opening scene

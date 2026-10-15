@@ -101,7 +101,8 @@ public:
 			&mRope.mSkinningWeights[0],
 			&mRope.mSkinningIndices[0]);
 
-		g_buffers->rigidOffsets.push_back(0);
+		if (g_buffers->rigidOffsets.empty())
+			g_buffers->rigidOffsets.push_back(0);
 
 		const int particleOffset = g_buffers->positions.size();
 		const int indexOffset = g_buffers->rigidOffsets.back();
