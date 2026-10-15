@@ -6,7 +6,7 @@ public:
 
 	struct RenderingInstance
 	{
-		Mesh* mMesh;
+		Mesh* mMesh = nullptr;
 		std::vector<int> mSkinningIndices;
 		std::vector<float> mSkinningWeights;
 		vector<Vec3> mRigidRestPoses;
@@ -63,6 +63,7 @@ public:
 		mesh->Transform(RotationMatrix(rotation));
 		mesh->Transform(TranslationMatrix(Point3(translation)));
 
+		delete mRope.mMesh;  // the previous reset's rope mesh
 		mRope.mMesh = mesh;
 		mRope.mOffset = g_buffers->rigidTranslations.size();
 		mRope.mRigidRestPoses.resize(0);

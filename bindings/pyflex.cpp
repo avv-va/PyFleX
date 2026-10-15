@@ -2915,6 +2915,7 @@ void pyflex_add_mesh(const char *path, float scaling, py::array_t<float> transla
     Mesh* mesh = ImportMesh(path);
     mesh->Transform(ScaleMatrix(Vec3(scaling)));
     NvFlexTriangleMeshId meshId = CreateTriangleMesh(mesh);
+    delete mesh;  // FleX and the GPU mesh keep their own copies
 
     auto ptr_translation = (float *) translation_.request().ptr;
     Vec3 translation = Vec3(ptr_translation[0], ptr_translation[1], ptr_translation[2]);
