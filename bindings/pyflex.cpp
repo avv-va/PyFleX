@@ -3304,6 +3304,9 @@ py::array_t<float> pyflex_get_sceneLower() {
     return scene_lower;
 }
 
+// when set, pyflex_render also reads the finished frame back into this buffer (RGBA, bottom row first)
+static std::vector<uint32_t>* g_readback = nullptr;
+
 void pyflex_render(int capture, char *path) {
     if (capture == 1) {
         g_capture = true;
@@ -3395,6 +3398,10 @@ void pyflex_render(int capture, char *path) {
         delete[] img.m_data;
     }
 
+    if (g_readback) {
+        ReadFrame((int*)g_readback->data(), g_screenWidth, g_screenHeight);
+    }
+
     double renderEndTime = GetSeconds();
 
     // if user requested a scene reset process it now
@@ -3459,7 +3466,9 @@ void pyflex_render(int capture, char *path) {
 
     // flush out the last frame before freeing up resources in the event of a scene change
     // this is necessary for d3d12
-    PresentFrame(g_vsync);
+    // (a frame read back into g_readback is not shown, and presenting it would wait for the display's vertical sync)
+    if (!g_readback)
+        PresentFrame(g_vsync);
 
     // if gui or benchmark requested a scene change process it now
     if (newScene != -1) {
@@ -3477,6 +3486,17 @@ void pyflex_render(int capture, char *path) {
 }
 
 
+py::array_t<uint8_t> pyflex_render_rgb() {
+    std::vector<uint32_t> frame(g_screenWidth * g_screenHeight);
+    g_readback = &frame;
+    pyflex_render(0, nullptr);
+    g_readback = nullptr;
+
+    py::array_t<uint8_t> rgba({(py::ssize_t)g_screenHeight, (py::ssize_t)g_screenWidth, (py::ssize_t)4});
+    memcpy(rgba.mutable_data(), frame.data(), frame.size() * sizeof(uint32_t));
+    return rgba;
+}
+
 PYBIND11_MODULE(pyflex, m) {
     m.def("main", &main);
 
@@ -3490,6 +3510,7 @@ PYBIND11_MODULE(pyflex, m) {
     m.def("render", &pyflex_render,
           py::arg("capture") = 0,
           py::arg("path") = nullptr);
+    m.def("render_rgb", &pyflex_render_rgb, "Render the viewer camera and return the frame as a (height, width, 4) RGBA uint8 array, bottom row first");
 
     m.def("add_box", &pyflex_add_box, "Add box to the scene");
     m.def("add_mesh", &pyflex_add_mesh, "Add a scaled triangle mesh shape loaded from an obj file");

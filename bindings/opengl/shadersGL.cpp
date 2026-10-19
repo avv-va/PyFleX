@@ -484,6 +484,36 @@ Vec3 GetScreenCoord(Vec3& pos) {
 
 void ReadFrame(int* backbuffer, int width, int height)
 {
+	if (g_msaaFbo)
+	{
+		// resolve the msaa buffer into a single sample fbo and read that, independent of the window
+		static GLuint resolveFbo = 0, resolveColor = 0;
+		static int resolveWidth = 0, resolveHeight = 0;
+		if (!resolveFbo || resolveWidth != width || resolveHeight != height)
+		{
+			if (resolveFbo)
+			{
+				glVerify(glDeleteFramebuffers(1, &resolveFbo));
+				glVerify(glDeleteRenderbuffers(1, &resolveColor));
+			}
+			glVerify(glGenFramebuffers(1, &resolveFbo));
+			glVerify(glGenRenderbuffers(1, &resolveColor));
+			glVerify(glBindRenderbuffer(GL_RENDERBUFFER, resolveColor));
+			glVerify(glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, width, height));
+			glVerify(glBindFramebuffer(GL_FRAMEBUFFER, resolveFbo));
+			glVerify(glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, resolveColor));
+			resolveWidth = width;
+			resolveHeight = height;
+		}
+		glVerify(glBindFramebuffer(GL_READ_FRAMEBUFFER_EXT, g_msaaFbo));
+		glVerify(glBindFramebuffer(GL_DRAW_FRAMEBUFFER_EXT, resolveFbo));
+		glVerify(glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST));
+		glVerify(glBindFramebuffer(GL_READ_FRAMEBUFFER_EXT, resolveFbo));
+		glVerify(glReadBuffer(GL_COLOR_ATTACHMENT0));
+		glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, backbuffer);
+		glVerify(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+		return;
+	}
 	glVerify(glReadBuffer(GL_BACK));
 	glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, backbuffer);
 }
