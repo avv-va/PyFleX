@@ -3486,7 +3486,7 @@ void pyflex_render(int capture, char *path) {
 }
 
 
-py::array_t<uint8_t> pyflex_render_rgb() {
+py::array_t<uint8_t> pyflex_render_pixels() {
     std::vector<uint32_t> frame(g_screenWidth * g_screenHeight);
     g_readback = &frame;
     pyflex_render(0, nullptr);
@@ -3510,7 +3510,7 @@ PYBIND11_MODULE(pyflex, m) {
     m.def("render", &pyflex_render,
           py::arg("capture") = 0,
           py::arg("path") = nullptr);
-    m.def("render_rgb", &pyflex_render_rgb, "Render the viewer camera and return the frame as a (height, width, 4) RGBA uint8 array, bottom row first");
+    m.def("render_pixels", &pyflex_render_pixels, "Render the viewer camera and return the frame as a (height, width, 4) RGBA uint8 array, bottom row first");
 
     m.def("add_box", &pyflex_add_box, "Add box to the scene");
     m.def("add_mesh", &pyflex_add_mesh, "Add a scaled triangle mesh shape loaded from an obj file");
