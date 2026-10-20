@@ -3486,6 +3486,13 @@ void pyflex_render(int capture, char *path) {
 }
 
 
+// place the viewer camera (FleX frame, angles in radians); a scene's CenterCamera runs at every set_scene, so call this after it
+void pyflex_set_camera(py::array_t<float> pos, float yaw, float pitch) {
+    auto p = pos.unchecked<1>();
+    g_camPos = Vec3(p(0), p(1), p(2));
+    g_camAngle = Vec3(yaw, pitch, 0.0f);
+}
+
 py::array_t<uint8_t> pyflex_render_pixels() {
     std::vector<uint32_t> frame(g_screenWidth * g_screenHeight);
     g_readback = &frame;
@@ -3510,6 +3517,7 @@ PYBIND11_MODULE(pyflex, m) {
     m.def("render", &pyflex_render,
           py::arg("capture") = 0,
           py::arg("path") = nullptr);
+    m.def("set_camera", &pyflex_set_camera, "Place the viewer camera: position (FleX frame), yaw and pitch in radians");
     m.def("render_pixels", &pyflex_render_pixels, "Render the viewer camera and return the frame as a (height, width, 4) RGBA uint8 array, bottom row first");
 
     m.def("add_box", &pyflex_add_box, "Add box to the scene");
