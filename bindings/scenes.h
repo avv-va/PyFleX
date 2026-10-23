@@ -76,6 +76,7 @@ public:
 #include "scenes/yz_clothgranular.h"
 #include "scenes/yz_ropebox.h"
 #include "scenes/yz_ropegranular.h"
+#include "scenes/yz_bunnypush.h"
 
 #include "scenes/adhesion.h"
 #include "scenes/armadilloshower.h"
