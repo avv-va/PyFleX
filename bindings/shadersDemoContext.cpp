@@ -69,6 +69,8 @@ void FlushGraphicsAndWait() { s_context->flushGraphicsAndWait(); }
 
 void ReadFrame(int* backbuffer, int width, int height) { s_context->readFrame(backbuffer, width, height); }
 
+void ReadDepthFrame(float* backbuffer, int width, int height) { s_context->readDepthFrame(backbuffer, width, height); }
+
 void GetViewRay(int x, int y, Vec3& origin, Vec3& dir) { return s_context->getViewRay(x, y, origin, dir); }
 
 void SetFillMode(bool wire) { s_context->setFillMode(wire); }

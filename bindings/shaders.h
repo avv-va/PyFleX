@@ -77,6 +77,9 @@ void GetViewRay(int x, int y, Vec3& origin, Vec3& dir);
 // read back pixel values
 void ReadFrame(int* backbuffer, int width, int height);
 
+// read back the depth buffer (GL_DEPTH_COMPONENT, [0,1])
+void ReadDepthFrame(float* backbuffer, int width, int height);
+
 void SetView(Matrix44 view, Matrix44 proj);
 void SetFillMode(bool wireframe);
 void SetCullMode(bool enabled);

@@ -26,6 +26,7 @@ class DemoContext
 	virtual void presentFrame(bool fullsync) = 0;
 	
 	virtual void readFrame(int* backBuffer, int width, int height) {}
+	virtual void readDepthFrame(float* backBuffer, int width, int height) {}
 
 	virtual void getViewRay(int x, int y, Vec3& origin, Vec3& dir) = 0;
 	virtual void setView(Matrix44 view, Matrix44 projection) = 0;

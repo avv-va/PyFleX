@@ -21,6 +21,7 @@ public:
 	virtual void endFrame();
 	virtual void presentFrame(bool fullsync);
 	virtual void readFrame(int* buffer, int width, int height);
+	virtual void readDepthFrame(float* buffer, int width, int height);
 	virtual void getViewRay(int x, int y, Vec3& origin, Vec3& dir);
 	virtual void setView(Matrix44 view, Matrix44 projection);
 	virtual void renderEllipsoids(FluidRenderer* renderer, FluidRenderBuffers* buffers, int n, int offset, float radius, float screenWidth, float screenAspect, float fov, Vec3 lightPos, Vec3 lightTarget, Matrix44 lightTransform, ::ShadowMap* shadowMap, Vec4 color, float blur, float ior, bool debug);

@@ -3308,6 +3308,9 @@ py::array_t<float> pyflex_get_sceneLower() {
 // when set, pyflex_render also reads the finished frame back into this buffer (RGBA, bottom row first)
 static std::vector<uint32_t>* g_readback = nullptr;
 
+// when set, pyflex_render also reads the finished depth buffer back into this buffer (GL_DEPTH_COMPONENT, [0,1], bottom row first)
+static std::vector<float>* g_depthReadback = nullptr;
+
 void pyflex_render(int capture, char *path) {
     if (capture == 1) {
         g_capture = true;
@@ -3403,6 +3406,10 @@ void pyflex_render(int capture, char *path) {
         ReadFrame((int*)g_readback->data(), g_screenWidth, g_screenHeight);
     }
 
+    if (g_depthReadback) {
+        ReadDepthFrame(g_depthReadback->data(), g_screenWidth, g_screenHeight);
+    }
+
     double renderEndTime = GetSeconds();
 
     // if user requested a scene reset process it now
@@ -3468,7 +3475,7 @@ void pyflex_render(int capture, char *path) {
     // flush out the last frame before freeing up resources in the event of a scene change
     // this is necessary for d3d12
     // (a frame read back into g_readback is not shown, and presenting it would wait for the display's vertical sync)
-    if (!g_readback)
+    if (!g_readback && !g_depthReadback)
         PresentFrame(g_vsync);
 
     // if gui or benchmark requested a scene change process it now
@@ -3505,6 +3512,17 @@ py::array_t<uint8_t> pyflex_render_pixels() {
     return rgba;
 }
 
+py::array_t<float> pyflex_render_depth() {
+    std::vector<float> depth(g_screenWidth * g_screenHeight);
+    g_depthReadback = &depth;
+    pyflex_render(0, nullptr);
+    g_depthReadback = nullptr;
+
+    py::array_t<float> buffer({(py::ssize_t)g_screenHeight, (py::ssize_t)g_screenWidth});
+    memcpy(buffer.mutable_data(), depth.data(), depth.size() * sizeof(float));
+    return buffer;
+}
+
 PYBIND11_MODULE(pyflex, m) {
     m.def("main", &main);
 
@@ -3520,6 +3538,7 @@ PYBIND11_MODULE(pyflex, m) {
           py::arg("path") = nullptr);
     m.def("set_camera", &pyflex_set_camera, "Place the viewer camera: position (FleX frame), yaw and pitch in radians");
     m.def("render_pixels", &pyflex_render_pixels, "Render the viewer camera and return the frame as a (height, width, 4) RGBA uint8 array, bottom row first");
+    m.def("render_depth", &pyflex_render_depth, "Render the viewer camera and return the depth buffer as a (height, width) float32 array in [0, 1], bottom row first");
 
     m.def("add_box", &pyflex_add_box, "Add box to the scene");
     m.def("add_mesh", &pyflex_add_mesh, "Add a scaled triangle mesh shape loaded from an obj file");

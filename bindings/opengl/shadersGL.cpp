@@ -518,6 +518,40 @@ void ReadFrame(int* backbuffer, int width, int height)
 	glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, backbuffer);
 }
 
+void ReadDepthFrame(float* backbuffer, int width, int height)
+{
+	if (g_msaaFbo)
+	{
+		// resolve the msaa depth buffer into a single sample fbo and read that, independent of the window
+		static GLuint resolveDepthFbo = 0, resolveDepth = 0;
+		static int resolveDepthWidth = 0, resolveDepthHeight = 0;
+		if (!resolveDepthFbo || resolveDepthWidth != width || resolveDepthHeight != height)
+		{
+			if (resolveDepthFbo)
+			{
+				glVerify(glDeleteFramebuffers(1, &resolveDepthFbo));
+				glVerify(glDeleteRenderbuffers(1, &resolveDepth));
+			}
+			glVerify(glGenFramebuffers(1, &resolveDepthFbo));
+			glVerify(glGenRenderbuffers(1, &resolveDepth));
+			glVerify(glBindRenderbuffer(GL_RENDERBUFFER, resolveDepth));
+			glVerify(glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height));
+			glVerify(glBindFramebuffer(GL_FRAMEBUFFER, resolveDepthFbo));
+			glVerify(glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, resolveDepth));
+			resolveDepthWidth = width;
+			resolveDepthHeight = height;
+		}
+		glVerify(glBindFramebuffer(GL_READ_FRAMEBUFFER_EXT, g_msaaFbo));
+		glVerify(glBindFramebuffer(GL_DRAW_FRAMEBUFFER_EXT, resolveDepthFbo));
+		glVerify(glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_DEPTH_BUFFER_BIT, GL_NEAREST));
+		glVerify(glBindFramebuffer(GL_READ_FRAMEBUFFER_EXT, resolveDepthFbo));
+		glReadPixels(0, 0, width, height, GL_DEPTH_COMPONENT, GL_FLOAT, backbuffer);
+		glVerify(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+		return;
+	}
+	glReadPixels(0, 0, width, height, GL_DEPTH_COMPONENT, GL_FLOAT, backbuffer);
+}
+
 void PresentFrame(bool fullsync)
 {
 #ifndef ANDROID
@@ -3072,6 +3106,11 @@ void DemoContextOGL::presentFrame(bool fullsync)
 void DemoContextOGL::readFrame(int* buffer, int width, int height)
 {
 	OGL_Renderer::ReadFrame(buffer, width, height);
+}
+
+void DemoContextOGL::readDepthFrame(float* buffer, int width, int height)
+{
+	OGL_Renderer::ReadDepthFrame(buffer, width, height);
 }
 
 void DemoContextOGL::getViewRay(int x, int y, Vec3& origin, Vec3& dir)
