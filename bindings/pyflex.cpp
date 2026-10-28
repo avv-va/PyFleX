@@ -394,8 +394,10 @@ Vec3 g_camVel(0.0f);
 Vec3 g_camSmoothVel(0.0f);
 
 float g_camSpeed;
-float g_camNear;
-float g_camFar;
+// the viewer camera's projection, valid from load so get_camera_params can be read before the first set_scene
+float g_camNear = 0.01f;
+float g_camFar = 1000.0f;
+float g_camFov = kPi / 4.0f;  // vertical field of view (rad)
 
 Vec3 g_lightPos;
 Vec3 g_lightDir;
@@ -639,8 +641,6 @@ void Init(int scene, py::array_t<float> scene_params, bool centerCamera = true, 
     g_fogDistance = 0.005f;
 
     g_camSpeed = 0.075f;
-    g_camNear = 0.01f;
-    g_camFar = 1000.0f;
 
     g_pointScale = 1.0f;
     g_ropeScale = 1.0f;
@@ -1230,7 +1230,7 @@ void RenderScene() {
     //---------------------------------------
     // setup view and state
 
-    float fov = kPi / 4.0f;
+    float fov = g_camFov;
     float aspect = float(g_screenWidth) / g_screenHeight;
 
     Matrix44 proj = ProjectionMatrix(RadToDeg(fov), aspect, g_camNear, g_camFar);
@@ -3523,6 +3523,34 @@ py::array_t<float> pyflex_render_depth() {
     return buffer;
 }
 
+// the viewer camera's projection, as RenderScene itself builds it, so Python never has to restate these
+py::dict pyflex_get_camera_params() {
+    py::dict params;
+    params["screen_width"] = g_screenWidth;
+    params["screen_height"] = g_screenHeight;
+    params["fov_deg"] = RadToDeg(g_camFov);
+    params["near"] = g_camNear;
+    params["far"] = g_camFar;
+    return params;
+}
+
+// both buffers of one render, so a camera that needs colour and depth is only rendered once
+py::tuple pyflex_render_rgbd() {
+    std::vector<uint32_t> frame(g_screenWidth * g_screenHeight);
+    std::vector<float> depth(g_screenWidth * g_screenHeight);
+    g_readback = &frame;
+    g_depthReadback = &depth;
+    pyflex_render(0, nullptr);
+    g_readback = nullptr;
+    g_depthReadback = nullptr;
+
+    py::array_t<uint8_t> rgba({(py::ssize_t)g_screenHeight, (py::ssize_t)g_screenWidth, (py::ssize_t)4});
+    memcpy(rgba.mutable_data(), frame.data(), frame.size() * sizeof(uint32_t));
+    py::array_t<float> buffer({(py::ssize_t)g_screenHeight, (py::ssize_t)g_screenWidth});
+    memcpy(buffer.mutable_data(), depth.data(), depth.size() * sizeof(float));
+    return py::make_tuple(rgba, buffer);
+}
+
 PYBIND11_MODULE(pyflex, m) {
     m.def("main", &main);
 
@@ -3537,8 +3565,10 @@ PYBIND11_MODULE(pyflex, m) {
           py::arg("capture") = 0,
           py::arg("path") = nullptr);
     m.def("set_camera", &pyflex_set_camera, "Place the viewer camera: position (FleX frame), yaw and pitch in radians");
+    m.def("get_camera_params", &pyflex_get_camera_params, "The viewer camera's projection as the renderer uses it: screen_width, screen_height, fov_deg, near, far (near/far are only set once init() has run)");
     m.def("render_pixels", &pyflex_render_pixels, "Render the viewer camera and return the frame as a (height, width, 4) RGBA uint8 array, bottom row first");
     m.def("render_depth", &pyflex_render_depth, "Render the viewer camera and return the depth buffer as a (height, width) float32 array in [0, 1], bottom row first");
+    m.def("render_rgbd", &pyflex_render_rgbd, "Render the viewer camera once and return both of its buffers: the (height, width, 4) RGBA uint8 frame and the (height, width) float32 depth buffer in [0, 1], both bottom row first");
 
     m.def("add_box", &pyflex_add_box, "Add box to the scene");
     m.def("add_mesh", &pyflex_add_mesh, "Add a scaled triangle mesh shape loaded from an obj file");
